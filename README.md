@@ -6,7 +6,7 @@ Leyline is a system for storing and viewing your personal location history. It u
 
 ## About
 
-I started coding this as a response to discovering my location was being tracked by Google Location History. It creates a MySQL database of your locations, and also has a viewer which shows your movements, 'hotspots', and favourite locations.
+I started coding this as a response to discovering my location was being tracked by Google Location History. It stores your location history in a MySQL database on your server, and also has a viewer which shows your movements, 'hotspots', and favourite locations. The aim is to give you full control over your location data.
 
 Leyline is a very long way from being finished. You can find me at [@tarasyoung](http://twitter.com/tarasyoung).
 
