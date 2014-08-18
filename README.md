@@ -61,7 +61,7 @@ Leyline is a very long way from being finished. You can find me at [@tarasyoung]
 			- Minimum GPS accuracy = 12 metres
 			- Minimum Wi-Fi accuracy = 100 metres
 		- Custom server settings
-			- Server URL = http://yourdomain/set.php
+			- Server URL = http://yourdomain/leyline/set.php
 			- Request type = POST
 			- Successful repsonse codes = 201,200
 			- Offline storage settings
