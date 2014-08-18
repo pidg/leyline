@@ -19,17 +19,19 @@ Leyline is a very long way from being finished. You can find me at [@tarasyoung]
 * Access to a MySQL database
 * Access to some web space with PHP (including rights to change file permissions)
 * Leyline
-* 5 minutes (hopefully)
+* 5 minutes to install it (hopefully)
 
 *Method*
 
-1. Upload the files to your server and point your browser towards install.php
+1. Upload the files to your server, make the folder world writeable (777) and point your browser towards install.php.
 
 2. Follow the instructions until Leyline is installed.
 
-3. Set up Backitude on your phone (see below) so it starts reporting your location.
+3. Change the folder permissions back to 755.
 
-4. After a few hours of checkins, visit the URL in your browser to see all locations recorded.
+4. Set up Backitude on your phone (see below) so it starts reporting your location.
+
+5. After a few hours of checkins, visit the URL in your browser to see all locations recorded.
 
 *Setting up Backitude*
 
