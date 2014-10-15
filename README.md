@@ -2,7 +2,7 @@
 
 Leyline is a system for storing and viewing your personal location history. It uses the Android app '[Backitude](https://play.google.com/store/apps/details?id=gaugler.backitude)' for getting your location, so you'll need an Android phone.
 
-![Screenshot])(http://i.imgur.com/qr8tgzp.png)
+![Screenshot](http://i.imgur.com/qr8tgzp.png)
 
 ## About
 
