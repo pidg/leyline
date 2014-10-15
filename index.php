@@ -1,8 +1,8 @@
 <?php
 
-/*
+/* 
 	Leyline
-	This plots your locations onto an OSM SlippyMap and adds tracks between them.
+	This plots your locations onto an OSM SlippyMap and adds tracks between them. 
 
 	by @tarasyoung
 
@@ -16,25 +16,44 @@
 
 // ----------------------------------------------------------- //
 
-$from = time() - (3600*40);	// show up to the last 40 hours of locations... you can change this.
-$to = time();
+// Grab any start or end date from GET vars:
+$sd = $_GET["startday"];
+$sm = $_GET["startmonth"];
+$sy = $_GET["startyear"];
+$ed = $_GET["endday"];
+$em = $_GET["endmonth"];
+$ey = $_GET["endyear"];
+
+// Convert start/end dates to unix timestamps:
+$from = ( $sd || $sm || $sy ) ? mktime(0, 0, 1, $sm, $sd, $sy) : time() - (60*60*24*7);
+$to = ( $ed || $em || $ey ) ? mktime(23, 59, 59, $em, $ed, $ey) : time();
+
 $max = 5;	// Maximum number of places to highlight
 
 // ----------------------------------------------------------- //
 
-include_once("functions/sql.php");
-include_once("functions/places.php");
-include_once("functions/bases.php");
-include_once("functions/usermgmt.php");
+include_once("functions/sql.php");			// Connects to database
+include_once("functions/places.php");		// Gets locations from database
+include_once("functions/bases.php");		// Figures out most visited places
+include_once("functions/usermgmt.php");		// User management
+include_once("functions/dateform.php");		// Creates date forms
+include_once("functions/revgeocode.php");		// Point-to-address (reverse geocoding)
+include_once("functions/distance.php");		// Distance calculation
 
 $is_installing=1; 	// This means we check whether setup has been run
 
-// Grab all locations from database:
-$result = get_locations($from, $to);
+$result = get_locations($from, $to);	// Grab all locations from datatbase
+$bases = find_bases($from, $to);		// Order by the most common places visited
+
+$location_home = $bases[0]['waypoints'][0];	// Home location (a guess)
+$location_work = $bases[1]['waypoints'][0];	// Work location (a guess)
+
+$home_address = reverse_geocode($location_home['latitude'], $location_home['longitude'] );
+$work_address = reverse_geocode($location_work['latitude'], $location_work['longitude'] );
 
 $is_installing=0;	// Turn this off because it's not needed after this point and breaks stuff
 
-if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) . " times in the period selected. This isn't likely to be enough to do anything useful.)"; }
+if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) . " times in the period selected. This isn't likely to be enough to do anything useful. Try again when you've checked in for a day or so)"; }
 
 ?><html>
 <head>
@@ -42,7 +61,7 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 
 	<script src="http://www.openlayers.org/api/OpenLayers.js"></script>
 	<script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
-
+ 
 	<script type="text/javascript">
 <?php
 
@@ -61,16 +80,16 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 		if ( $location['longitude'] > $maxlong ) $maxlong = $location['longitude'];
 		if ( $location['longitude'] < $minlong ) $minlong = $location['longitude'];
 	}
-
+	
 	$centerlat = $minlat + (( $maxlat - $minlat ) / 2 );		// Find centre point latitude
 	$centerlong = $minlong + (( $maxlong - $minlong ) / 2 );	// Find centre point longitude
-
+	
 	// Set starting lat, long and zoom in Javascript:
 	echo "	var lat=$centerlat;\n";
 	echo "	var lon=$centerlong;\n";
 	echo "	var zoom=7;\n\n";
 
-?>
+?> 
 		function init() {
 
 		// Create new map object
@@ -91,19 +110,17 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 				displayProjection: new OpenLayers.Projection("EPSG:4326")
 			} );
 
-
 			// Add Mapnik layer:
 
 			layerMapnik = new OpenLayers.Layer.OSM.Mapnik("Mapnik");
 			map.addLayer(layerMapnik);
-
 
 			// Get projection info
 
 			var epsg4326 = new OpenLayers.Projection("EPSG:4326");
 			var projectTo = map.getProjectionObject(); // Map projection (Spherical Mercator)
 
-
+ 
 			// Add GPX track layer (loads using tracksgpx.php):
 
 			var lGPX = new OpenLayers.Layer.Vector("My Locations", {
@@ -127,15 +144,33 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 
 			var vectorLayer = new OpenLayers.Layer.Vector("Overlay");
 
-<?php
+<?php 
 
 	// Cycle through waypoints and add each one
 
+	$total_distance=0;
+	$flag=0;	// Flag whether this is the first point, in which case ignore.
 	foreach ( $result as $location )
 	{
+	
+		if ( $flag )
+		{
+
+			// This works out how fast you were travelling for each leg and stores in $distances[] by guessed mode of transport:
+
+			$distance = 0;
+			$distance = round(distance($lastone["latitude"], $lastone["longitude"], $location["latitude"], $location["longitude"]),3);
+			$speed = round(speed($distance, $lastone["reqtime"]-$location["reqtime"]),2);
+			$transport = transport($speed, 1);
+			
+			$distances[$transport] += $distance;
+			$total_distance += $distance;
+		}
+
+		$flag=1;
 
 		// Set bubble text:
-		$when = "Location at " . date("d/m/Y H:i:s", $location['reqtime']);
+		$when = "Location at " . date("d/m/Y H:i:s", $location['reqtime']) . " travelling at $speed mph by $transport.<br>Distance from last point: $distance miles";
 
 		// Output waypoint code:
 		echo	"var feature = new OpenLayers.Feature.Vector(
@@ -144,12 +179,29 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 				{externalGraphic: 'images/point.png', graphicHeight: 40, graphicWidth: 40, graphicXOffset:-20, graphicYOffset:-20  }
 	       		);
 			vectorLayer.addFeatures(feature);\n";
+
+		$lastone = $location;
+
+	}
+
+	// It's very unlikely that someone travelled less than 30 miles by air, so it's probably a glitch:
+	if ( $distances["air"] <= 30 )
+	{
+		$distances["car/bus"] += $distances["air"];
+		$distances["air"] = 0;
+	}
+
+	// It's very unlikely that someone travelled less than 15 miles by fast train, so it's probably a glitch:
+	if ( $distances["air"] <= 15 )
+	{
+		$distances["car/bus"] += $distances["fast train"];
+		$distances["fast train"] = 0;
 	}
 
 
 	// Mark 5 most common locations with a special marker
+	// we already did 	$bases = find_bases($from, $to);
 
-	$bases = find_bases($from, $to);
 	$max=$max-1;	// Adjust for 0 index
 
 	for ( $n=0; $n <= $max; $n++ )
@@ -157,11 +209,19 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 		// Set bubble text:
 		$when = "You were here for " . $bases[$n]['score'] . " check-ins (" . ($n+1) . "/" . ($max+1) . ")";
 
+		$marker = ( $n < 1 ) ? "home" : "marker";
+
+		$iconheight = ( $marker == "home" ) ? 37 : 41;
+		$iconwidth = ( $marker == "home" ) ? 32 : 22;
+
+		$iconYoffset = 0-$iconheight;
+		$iconXoffset = (0-$iconwidth) / 2;
+
 		// Output waypoint code:
 		echo	"var feature = new OpenLayers.Feature.Vector(
 				new OpenLayers.Geometry.Point( " . $bases[$n]['longitude'] . ", " . $bases[$n]['latitude'] . " ).transform(epsg4326, projectTo),
 				{description:'" . $when . "'} ,
-				{externalGraphic: 'images/marker.png', graphicHeight: 41, graphicWidth: 22, graphicXOffset:-11, graphicYOffset:-41  }
+				{externalGraphic: 'images/$marker.png', graphicHeight: $iconheight, graphicWidth: $iconwidth, graphicYOffset:$iconYoffset, graphicXOffset:$iconXoffset }
 	       		);
 			vectorLayer.addFeatures(feature);\n";
 	}
@@ -197,15 +257,57 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 		feature.popup.destroy();
 		feature.popup = null;
 	}
-
+    
 	map.addControl(controls['selector']);
 	controls['selector'].activate();
 
 }
 	</script>
-
+ 
 </head>
 <body onload="init();">
-	<div style="width:90%; height:90%" id="map"><!-- Map goes here --></div>
+
+	<div id="date">
+		<form action="index.php" method="get">
+			From: <?php 
+
+
+				if ( !$sd ) $sd = 1;
+				if ( !$sm ) $sm = 1;
+				if ( !$sy ) $sy = 2014;
+
+				if ( !$ed ) $ed = 0;
+				if ( !$em ) $em = 0;
+				if ( !$ey ) $ey = 0;
+
+				dateform("start", $sd, $sm, $sy); 
+
+			?> // To: 
+			<?php dateform("end", $ed, $em, $ey); ?> // 
+			<input type="submit" value="View">
+		</form>
+	</div>
+
+	<div>
+	<?php 
+
+	/* 
+		// Display modes of transport.  Still glitchy so commented out.
+
+		echo "You travelled $total_distance miles in this period using the following modes of transport:\n";
+
+		echo "<table>\n";
+		foreach ( $distances as $mode=>$distance )
+		{
+			echo "<tr><td>$mode</td><td>$distance</td></tr>\n";
+		}
+		echo "</table>\n";
+
+	*/
+
+ ?>
+	</div>
+
+	<div id="map" style="width:90%; height:90%"><!-- Map goes here --></div>
 </body>
 </html>

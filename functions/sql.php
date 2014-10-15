@@ -15,7 +15,7 @@ function opendb()
 	{
 		if ( !file_exists("database.ini") )
 		{
-			if ( !$dbhost || !$dbuser || !$dbpass || !$dbname ) die("<meta http-equiv='refresh' content='0;url=install.php'>");
+			if ( !$dbhost || !$dbuser || $dbpass || $dbname ) die("<meta http-equiv='refresh' content='0;url=install.php'>");
 		}
 	}
 
@@ -36,13 +36,13 @@ function query($query, $wantresult)
 
 	opendb();
 
-		if( !$result = $conn->query($query) )
+		if( !$result = $conn->query($query) ) 
 			{
 				if ( !$wantresult ) die('Couldn\'t run the query. [' . $conn->error . ']');
 				$wantresult = 0;
 				$errored = 1;
 			}
-
+		
 		if ( $wantresult ) while($row = $result->fetch_assoc()) $output[] = $row;
 		if ( $errored ) return 0;
 

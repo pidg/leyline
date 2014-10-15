@@ -1,15 +1,12 @@
 <?php
 
 /*
-	Creates a KML file of all points for a particular period (specified
+	Creates a KML file of all points for a particular period (specified 
 	as GET parameters from=unixtime & to=unixtime, both optional)
-
-	Suggested by @dannybirchall
-
 */
 
 
-include_once ( __DIR__  . "/sql.php");
+include_once ( __DIR__  . "/sql.php"); 
 include_once ( __DIR__  . "/places.php");
 
 $result = get_locations($_GET["from"], $_GET["to"]);
