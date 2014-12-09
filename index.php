@@ -1,8 +1,8 @@
 <?php
 
-/* 
+/*
 	Leyline
-	This plots your locations onto an OSM SlippyMap and adds tracks between them. 
+	This plots your locations onto an OSM SlippyMap and adds tracks between them.
 
 	by @tarasyoung
 
@@ -61,7 +61,7 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 
 	<script src="http://www.openlayers.org/api/OpenLayers.js"></script>
 	<script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
- 
+
 	<script type="text/javascript">
 <?php
 
@@ -80,16 +80,16 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 		if ( $location['longitude'] > $maxlong ) $maxlong = $location['longitude'];
 		if ( $location['longitude'] < $minlong ) $minlong = $location['longitude'];
 	}
-	
+
 	$centerlat = $minlat + (( $maxlat - $minlat ) / 2 );		// Find centre point latitude
 	$centerlong = $minlong + (( $maxlong - $minlong ) / 2 );	// Find centre point longitude
-	
+
 	// Set starting lat, long and zoom in Javascript:
 	echo "	var lat=$centerlat;\n";
 	echo "	var lon=$centerlong;\n";
 	echo "	var zoom=7;\n\n";
 
-?> 
+?>
 		function init() {
 
 		// Create new map object
@@ -120,7 +120,7 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 			var epsg4326 = new OpenLayers.Projection("EPSG:4326");
 			var projectTo = map.getProjectionObject(); // Map projection (Spherical Mercator)
 
- 
+
 			// Add GPX track layer (loads using tracksgpx.php):
 
 			var lGPX = new OpenLayers.Layer.Vector("My Locations", {
@@ -144,7 +144,7 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 
 			var vectorLayer = new OpenLayers.Layer.Vector("Overlay");
 
-<?php 
+<?php
 
 	// Cycle through waypoints and add each one
 
@@ -152,7 +152,7 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 	$flag=0;	// Flag whether this is the first point, in which case ignore.
 	foreach ( $result as $location )
 	{
-	
+
 		if ( $flag )
 		{
 
@@ -162,7 +162,7 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 			$distance = round(distance($lastone["latitude"], $lastone["longitude"], $location["latitude"], $location["longitude"]),3);
 			$speed = round(speed($distance, $lastone["reqtime"]-$location["reqtime"]),2);
 			$transport = transport($speed, 1);
-			
+
 			$distances[$transport] += $distance;
 			$total_distance += $distance;
 		}
@@ -257,41 +257,40 @@ if ( count($result) < 10 ) { echo "(You've only checked in " . (count($result)) 
 		feature.popup.destroy();
 		feature.popup = null;
 	}
-    
+
 	map.addControl(controls['selector']);
 	controls['selector'].activate();
 
 }
 	</script>
- 
+
 </head>
 <body onload="init();">
 
 	<div id="date">
 		<form action="index.php" method="get">
-			From: <?php 
+			From: <?php
 
+				if ( $sd=="" ) $sd = intval(date("j", $from));
+				if ( $sm=="" ) $sm = intval(date("n", $from));
+				if ( $sy=="" ) $sy = intval(date("Y", $from));
 
-				if ( !$sd ) $sd = 1;
-				if ( !$sm ) $sm = 1;
-				if ( !$sy ) $sy = 2014;
+				if ( $ed=="" ) $ed = 0;
+				if ( $em=="" ) $em = 0;
+				if ( $ey=="" ) $ey = 0;
 
-				if ( !$ed ) $ed = 0;
-				if ( !$em ) $em = 0;
-				if ( !$ey ) $ey = 0;
+				dateform("start", $sd, $sm, $sy);
 
-				dateform("start", $sd, $sm, $sy); 
-
-			?> // To: 
-			<?php dateform("end", $ed, $em, $ey); ?> // 
+			?> // To:
+			<?php dateform("end", $ed, $em, $ey); ?> //
 			<input type="submit" value="View">
 		</form>
 	</div>
 
 	<div>
-	<?php 
+	<?php
 
-	/* 
+	/*
 		// Display modes of transport.  Still glitchy so commented out.
 
 		echo "You travelled $total_distance miles in this period using the following modes of transport:\n";

@@ -6,7 +6,7 @@ function numerical_select($fieldname, $start, $end, $padding, $selected)
 {
 	// e.g.  numerical_select("year", 2010, 2020, 4, 2014)
 
-	echo "<select class=\"datefield\" name=\"$fieldname\">\n";
+	echo "<select class=\"datefield\" name=\"$fieldname\" autocomplete=\"off\">\n";
 
 	for ( $n=$start; $n <= $end; $n++ )
 	{
@@ -20,7 +20,7 @@ function numerical_select($fieldname, $start, $end, $padding, $selected)
 
 function month_select($fieldname, $selected)
 {
-	echo "<select class=\"datefield\" name=\"$fieldname\">\n";
+	echo "<select class=\"datefield\" name=\"$fieldname\" autocomplete=\"off\">\n";
 	$months = array("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
 
 	$n=0;
@@ -49,4 +49,3 @@ function dateform($prefix, $d, $m, $y)
 	month_select($prefix."month", $m);
 	numerical_select($prefix."year", date("Y")-5, date("Y")+5, 4, $y);
 }
-
